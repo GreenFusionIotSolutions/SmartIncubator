@@ -129,14 +129,7 @@ export const MonitoringDashboard = () => {
     lightIntensity: [],
   });
 
-  // const [metricsData, setMetricsData] = useState({
-  //   labels: [],
-  //   temperature: [],
-  //   humidity: [],
-  //   airQualityIndex: [],
-  //   uvRadiation: [],
-  //   lightIntensity: [],
-  // });
+
 
 
   // const [notifications, setNotifications] = useState<string[]>([]);
