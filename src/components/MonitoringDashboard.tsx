@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { dbA, doc, onSnapshot } from "../config/firebaseConfig";
 import { motion } from "framer-motion";
-// import { Notification } from "./Notification";
+import { NotificationAlerts } from "./NotificationAlerts";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
@@ -128,97 +128,7 @@ export const MonitoringDashboard = () => {
     uvRadiation: [],
     lightIntensity: [],
   });
-
-
-
-
-  // const [notifications, setNotifications] = useState<string[]>([]);
-
-  // // Fetch data based on selected date and time
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const isRealTime =
-  //       selectedDateTime.toISOString().split("T")[0] ===
-  //       new Date().toISOString().split("T")[0];
-
-  //     if (isRealTime) {
-  //       const data = await fetchRealTimeData();
-  //       setIncubator(data);
-  //     } else {
-  //       const data = await fetchHistoricalData(selectedDateTime);
-  //       setIncubator(data);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [selectedDateTime]);
-
-  // // Function to add a notification
-  // const addNotification = (message: string) => {
-  //   setNotifications((prev) => [...prev, message]);
-  //   setTimeout(() => {
-  //     setNotifications((prev) => prev.slice(1));
-  //   }, 5000); // Notification disappears after 5 seconds
-  // };
-
-  // // Monitor for critical conditions
-  // useEffect(() => {
-  //   if (incubator) {
-  //     const checkCriticalConditions = () => {
-  //       const criticalMetrics = [];
-
-  //       if (incubator.temperature < 20 || incubator.temperature > 35) {
-  //         criticalMetrics.push("Temperature");
-  //       }
-  //       if (incubator.humidity < 30 || incubator.humidity > 70) {
-  //         criticalMetrics.push("Humidity");
-  //       }
-  //       if (incubator.airQualityIndex > 100) {
-  //         criticalMetrics.push("Air Quality Index");
-  //       }
-  //       if (incubator.uvRadiation > 5) {
-  //         criticalMetrics.push("UV Radiation");
-  //       }
-  //       if (incubator.flameDetected) {
-  //         criticalMetrics.push("Flame Detected");
-  //       }
-  //       if (incubator.lightIntensity > 2000) {
-  //         criticalMetrics.push("Light Intensity");
-  //       }
-
-  //       if (criticalMetrics.length > 0) {
-  //         criticalMetrics.forEach((metric) => {
-  //           addNotification(`${metric} is in a critical condition!`);
-  //         });
-  //       }
-  //     };
-
-  //     const isRealTime =
-  //       selectedDateTime.toISOString().split("T")[0] ===
-  //       new Date().toISOString().split("T")[0];
-
-  //     if (isRealTime) {
-  //       checkCriticalConditions();
-  //     }
-  //   }
-  // }, [incubator, selectedDateTime]);
-
-  // // Render notifications
-  // const renderNotifications = () => (
-  //   <div className="notifications-container">
-  //     {notifications.map((message, index) => (
-  //       <Notification
-  //         key={index}
-  //         message={message}
-  //         onClose={() =>
-  //           setNotifications((prev) => prev.filter((_, i) => i !== index))
-  //         }
-  //       />
-  //     ))}
-  //   </div>
-  // );
-
-
+  
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
   const goBack = () => {
@@ -344,6 +254,7 @@ export const MonitoringDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 rounded-2xl bg-gradient-to-br from-black via-gray-900 to-purple-900 min-h-screen">
+    <NotificationAlerts incubator={incubator} />
       <h1 className="text-4xl font-bold mb-8 text-center text-[#BB86FC] tracking-tight">
         Incubator Monitoring Dashboard
       </h1>
