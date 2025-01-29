@@ -147,21 +147,22 @@ export const MonitoringDashboard = () => {
   const fetchMetricsWithTimeout = async (dateTime: string) => {
     console.log("Fetching document for ID:", dateTime);
     setLoading(true);
-
+  
     const timeout = setTimeout(() => {
       console.warn("Timeout reached: No data fetched within 2 minutes.");
       setLoading(false);
     }, 120000);
-
+  
     try {
       const docRef = doc(dbA, "values", dateTime);
-      
+  
+      // Establish a real-time listener
       const unsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
           clearTimeout(timeout);
           console.log("Document data:", docSnap.data());
           const data = docSnap.data() as Incubator;
-
+  
           setIncubator(data);
           setLastUpdated(new Date());
           setMetricsData((prevData) => ({
@@ -172,18 +173,21 @@ export const MonitoringDashboard = () => {
             uvRadiation: [...prevData.uvRadiation, data.uvRadiation],
             lightIntensity: [...prevData.lightIntensity, data.lightIntensity],
           }));
+  
+          setLoading(false);
         } else {
           console.warn(`No document found for ID: ${dateTime}`);
         }
-        setLoading(false);
-        unsubscribe();
       });
+  
+      return unsubscribe; // Keep the listener alive
     } catch (error) {
       console.error("Error fetching metrics:", error);
       clearTimeout(timeout);
       setLoading(false);
     }
   };
+  
   
   useEffect(() => {
     const interval = setInterval(() => {

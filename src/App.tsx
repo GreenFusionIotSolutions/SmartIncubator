@@ -7,8 +7,6 @@ import { MonitoringDashboard } from './components/MonitoringDashboard';
 import {Admin} from './pages/Admin';
 import { DoctorsList } from './components/DoctorsList';
 
-
-
 // Mock data for demonstration
 
 function App() {
