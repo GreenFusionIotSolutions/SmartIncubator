@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { MonitoringDashboard } from './components/MonitoringDashboard';
-import {Admin} from './pages/Admin';
+import { Admin } from './pages/Admin';
 import { DoctorsList } from './components/DoctorsList';
 
 // Mock data for demonstration

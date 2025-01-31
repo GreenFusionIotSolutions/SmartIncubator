@@ -1,6 +1,8 @@
 //src/components/MonitoringDashboard.tsx
 import React, { useEffect, useState } from "react";
-import { dbA, doc, onSnapshot } from "../config/firebaseConfig";
+import { checkMetricThresholds } from "../utils/notificationUtils";
+import { db, doc, onSnapshot } from "../config/firebaseConfig";
+import { getMessaging, onMessage } from "firebase/messaging";
 import { motion } from "framer-motion";
 import { NotificationAlerts } from "./NotificationAlerts";
 import DatePicker from "react-datepicker";
@@ -111,6 +113,7 @@ export const MonitoringDashboard = () => {
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
   const [incubator, setIncubator] = useState<Incubator | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [userId, setUserId] = useState<string | null>(localStorage.getItem('userId'));
   const [loading, setLoading] = useState(false);
   type MetricsData = {
     labels: string[];
@@ -128,13 +131,22 @@ export const MonitoringDashboard = () => {
     uvRadiation: [],
     lightIntensity: [],
   });
-  
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  useEffect(() => {
+    const messaging = getMessaging();
+    const unsubscribe = onMessage(messaging, (payload) => {
+      new Notification(payload.notification?.title || "Alert", {
+        body: payload.notification?.body,
+        icon: "/logo192.png",
+      });
+    });
+    return () => unsubscribe();
+  }, []);
 
   const goBack = () => {
     window.history.back();
   };
-
+  
   const convertToDateFormat = (date: Date): string => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -154,17 +166,21 @@ export const MonitoringDashboard = () => {
     }, 120000);
   
     try {
-      const docRef = doc(dbA, "values", dateTime);
+      const docRef = doc(db, "values", dateTime);
   
       // Establish a real-time listener
       const unsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
           clearTimeout(timeout);
-          console.log("Document data:", docSnap.data());
           const data = docSnap.data() as Incubator;
-  
           setIncubator(data);
           setLastUpdated(new Date());
+
+          // Check metric thresholds and trigger alerts
+          if (userId) {
+            checkMetricThresholds(data, userId);
+          }
+          
           setMetricsData((prevData) => ({
             labels: [...prevData.labels, dateTime],
             temperature: [...prevData.temperature, data.temperature],

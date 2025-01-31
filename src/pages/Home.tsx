@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Baby, UserCircle2, Lock } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { dbB } from '../config/firebaseConfig';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+import { getMessaging, getToken } from 'firebase/messaging';
 import logo from '../pages/logo.png';
 
 export function Home() {
@@ -12,13 +13,33 @@ export function Home() {
   const [parentCredentials, setParentCredentials] = useState({ username: '', password: '' });
   const [adminBoxVisible, setAdminBoxVisible] = useState(false);
   const [adminCredentials, setAdminCredentials] = useState({ username: '', password: '' });
-
   const [doctorError, setDoctorError] = useState<string | null>(null);
   const [parentError, setParentError] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
-
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [isParentLoading, setIsParentLoading] = useState(false);
+
+  const requestNotificationPermission = async (userId: string) => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const messaging = getMessaging();
+        const token = await getToken(messaging, {
+          vapidKey: 'BOddbFMUBgzyx-bNuBXilESUJ4x0I5hCOoVKdZFRaDzhn0DwzOdw2nE6Ra2xaQgXnsx_KX8T6ymEjZFq249E7r4', // Replace with your Firebase VAPID key
+        });
+
+        localStorage.setItem('fcmToken', token);
+        localStorage.setItem('userId', userId);
+
+        // Store token in Firestore
+        await updateDoc(doc(db, 'users', userId), {
+          fcmToken: token,
+        });
+      }
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+    }
+  };
 
   const handleDoctorLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +47,7 @@ export function Home() {
     setDoctorError(null);
 
     try {
-      const doctorsRef = collection(dbB, 'doctors');
+      const doctorsRef = collection(db, 'doctors');
       const q = query(
         doctorsRef,
         where('doctorID', '==', doctorCredentials.username),
@@ -36,6 +57,8 @@ export function Home() {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
+        const userId = doctorCredentials.username; // Use doctorID as userId
+        await requestNotificationPermission(userId);
         navigate('/doctor/dashboard');
       } else {
         setDoctorError('Invalid doctor credentials');
@@ -54,7 +77,7 @@ export function Home() {
     setParentError(null);
 
     try {
-      const incubatorsRef = collection(dbB, 'incubators');
+      const incubatorsRef = collection(db, 'incubators');
       const q = query(
         incubatorsRef,
         where('parentID', '==', parentCredentials.username),
@@ -64,6 +87,8 @@ export function Home() {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
+        const userId = parentCredentials.username; // Use parentID as userId
+        await requestNotificationPermission(userId);
         navigate('/parent/monitor');
       } else {
         setParentError('Invalid parent credentials');

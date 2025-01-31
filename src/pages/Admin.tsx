@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
-import { dbB } from '../config/firebaseConfig';
+import { db } from '../config/firebaseConfig';
 import { UserCircle2, Baby, Lock, Plus, XCircle, ArrowLeft, LogOut, Trash2, Edit, Eye, EyeOff } from 'lucide-react';
 
 interface Incubator {
@@ -41,7 +41,7 @@ export function Admin() {
   useEffect(() => {
     const fetchIncubators = async () => {
       try {
-        const querySnapshot = await getDocs(collection(dbB, 'incubators'));
+        const querySnapshot = await getDocs(collection(db, 'incubators'));
         const fetchedIncubators = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -59,7 +59,7 @@ export function Admin() {
 
   // Check if the parentID already exists in the database
   const checkIDExistence = async (parentID: string) => {
-    const q = query(collection(dbB, 'incubators'), where('parentID', '==', parentID));
+    const q = query(collection(db, 'incubators'), where('parentID', '==', parentID));
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
   };
@@ -84,7 +84,7 @@ export function Admin() {
         babyDOB: newIncubator.babyDOB,
       };
 
-      const docRef = await addDoc(collection(dbB, 'incubators'), incubatorData);
+      const docRef = await addDoc(collection(db, 'incubators'), incubatorData);
       setIncubators([...incubators, { id: docRef.id, ...incubatorData }]);
       setIsIncubatorFormVisible(false);
       setNewIncubator({
@@ -115,7 +115,7 @@ export function Admin() {
         doctorPassword: newDoctor.doctorPassword,
       };
 
-      await addDoc(collection(dbB, 'doctors'), doctorData);
+      await addDoc(collection(db, 'doctors'), doctorData);
       setIsDoctorFormVisible(false);
       setNewDoctor({
         doctorName: '',
@@ -160,7 +160,7 @@ export function Admin() {
         babyDOB: newIncubator.babyDOB,
       };
 
-      const incubatorRef = doc(dbB, 'incubators', editingIncubator.id);
+      const incubatorRef = doc(db, 'incubators', editingIncubator.id);
       await updateDoc(incubatorRef, incubatorData);
 
       const updatedIncubators = incubators.map((incubator) =>
@@ -190,7 +190,7 @@ export function Admin() {
   // Handle deleting an incubator
   const handleDelete = async (id: string) => {
     try {
-      const incubatorRef = doc(dbB, 'incubators', id);
+      const incubatorRef = doc(db, 'incubators', id);
       await deleteDoc(incubatorRef);
 
       const updatedIncubators = incubators.filter((incubator) => incubator.id !== id);

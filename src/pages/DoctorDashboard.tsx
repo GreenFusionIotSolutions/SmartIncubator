@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { dbB } from "../config/firebaseConfig";
+import { db } from "../config/firebaseConfig";
 import { Baby, Calendar, User, ArrowLeft, LogOut, Search } from "lucide-react";
 
 interface Incubator {
@@ -23,7 +23,7 @@ export function DoctorDashboard() {
   useEffect(() => {
     const fetchIncubators = async () => {
       try {
-        const querySnapshot = await getDocs(collection(dbB, "incubators"));
+        const querySnapshot = await getDocs(collection(db, "incubators"));
         const fetchedIncubators = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),

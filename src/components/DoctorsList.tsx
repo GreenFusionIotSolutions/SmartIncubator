@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { dbB } from '../config/firebaseConfig';
+import { db } from '../config/firebaseConfig';
 import { motion } from 'framer-motion';
 import { Trash2, Edit, ArrowLeft } from 'lucide-react';
 
@@ -24,7 +24,7 @@ export function DoctorsList() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const querySnapshot = await getDocs(collection(dbB, 'doctors'));
+        const querySnapshot = await getDocs(collection(db, 'doctors'));
         const fetchedDoctors = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -40,7 +40,7 @@ export function DoctorsList() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteDoc(doc(dbB, 'doctors', id));
+      await deleteDoc(doc(db, 'doctors', id));
       setDoctors(doctors.filter((doctor) => doctor.id !== id));
       setAlertMessage('Doctor deleted successfully');
       setTimeout(() => setAlertMessage(null), 3000);
@@ -65,7 +65,7 @@ export function DoctorsList() {
     if (!editingDoctor) return;
 
     try {
-      const doctorRef = doc(dbB, 'doctors', editingDoctor.id);
+      const doctorRef = doc(db, 'doctors', editingDoctor.id);
       await updateDoc(doctorRef, newDoctorData);
       setDoctors(
         doctors.map((doctor) =>
