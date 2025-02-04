@@ -94,7 +94,7 @@ export function Home() {
           onClick={() => setAdminBoxVisible(!adminBoxVisible)}
           className="bg-[#a671ed] hover:bg-[#BB86FC] text-white px-4 py-2 rounded-lg shadow transition-all"
         >
-          Admin Login
+          Admin 
         </button>
 
         {adminBoxVisible && (
