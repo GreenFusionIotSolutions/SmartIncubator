@@ -257,7 +257,7 @@ export const MonitoringDashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 rounded-2xl bg-gradient-to-br from-black via-gray-900 to-purple-900 min-h-screen">
+    <div className=" p-6 bg-gradient-to-br from-black via-gray-900 to-purple-900 min-h-screen">
     <NotificationAlerts incubator={incubator} />
       <h1 className="text-4xl font-bold mb-8 text-center text-[#BB86FC] tracking-tight">
         Incubator Monitoring Dashboard

@@ -80,7 +80,7 @@ export function DoctorDashboard() {
               <button onClick={() => window.history.back()} className="text-gray-300 hover:text-white">
                 <ArrowLeft className="h-6 w-6" />
               </button>
-              <h1 className="text-3xl font-bold">Doctor Dashboard</h1>
+              <h1 className="text-3xl font-bold text-[#BB86FC]">Doctor Dashboard</h1>
             </div>
 
             {/* Center: Search Bar */}
