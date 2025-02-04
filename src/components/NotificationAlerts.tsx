@@ -93,12 +93,19 @@ export const NotificationAlerts = ({ incubator }: NotificationAlertsProps) => {
         }
       }
 
-      // Play sound for critical notifications
       if (newNotifications.some(n => n.type === "Critical")) {
         if (audioRef.current) {
           audioRef.current.play().catch(error => {
             console.error("Audio playback failed:", error);
           });
+
+          // Stop the audio after 5 seconds
+          setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0; // Reset audio to the beginning
+            }
+          }, 5000); // 5000 milliseconds = 5 seconds
         }
       }
 
