@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, AlertCircle, Siren } from "lucide-react";
 import { Incubator } from "./MonitoringDashboard";
+
+// Import your audio file (make sure it's in the correct path)
+import emergencySound from "../../public/alert.mp3";
 
 interface Notification {
   id: string;
@@ -17,6 +20,13 @@ interface NotificationAlertsProps {
 export const NotificationAlerts = ({ incubator }: NotificationAlertsProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const prevIncubator = useRef<Incubator | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize the audio element
+  useEffect(() => {
+    audioRef.current = new Audio(emergencySound);
+    audioRef.current.preload = "auto"; // Preload the audio file
+  }, []);
 
   useEffect(() => {
     const checkThresholds = (current: Incubator, previous: Incubator | null) => {
@@ -83,6 +93,15 @@ export const NotificationAlerts = ({ incubator }: NotificationAlertsProps) => {
         }
       }
 
+      // Play sound for critical notifications
+      if (newNotifications.some(n => n.type === "Critical")) {
+        if (audioRef.current) {
+          audioRef.current.play().catch(error => {
+            console.error("Audio playback failed:", error);
+          });
+        }
+      }
+
       setNotifications(prev => [...newNotifications, ...prev]);
     };
 
@@ -96,7 +115,7 @@ export const NotificationAlerts = ({ incubator }: NotificationAlertsProps) => {
     const timer = setInterval(() => {
       setNotifications(prev => {
         const now = new Date();
-        return prev.filter(n => now.getTime() - n.timestamp.getTime() < 5000);
+        return prev.filter(n => now.getTime() - n.timestamp.getTime() < 10000);
       });
     }, 1000);
 
@@ -106,28 +125,49 @@ export const NotificationAlerts = ({ incubator }: NotificationAlertsProps) => {
   return (
     <AnimatePresence>
       <div className="fixed top-4 right-4 z-50 space-y-2 max-w-md w-full">
-        {notifications.map(notification => (
+        {notifications.map((notification, index) => (
           <motion.div
             key={notification.id}
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 100 }}
-            className={`p-4 pr-8 rounded-lg shadow-xl relative ${
-              notification.type === "Critical" 
-                ? "bg-red-600/90 border-2 border-red-500" 
-                : "bg-yellow-600/90 border-2 border-yellow-500"
-            }`}
+            exit={{ opacity: 0, x: 100, transition: { duration: 0.2 } }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className={`p-4 pr-8 rounded-xl shadow-2xl relative overflow-hidden
+              ${notification.type === "Critical" 
+                ? "bg-gradient-to-r from-red-600/90 to-red-700/90 border-l-4 border-red-500"
+                : "bg-gradient-to-r from-yellow-600/90 to-yellow-700/90 border-l-4 border-yellow-500"}`}
           >
-            <p className="font-bold text-sm mb-1">{notification.type} Alert!</p>
-            <p className="text-sm">{notification.message}</p>
-            <button
-              onClick={() => setNotifications(prev => 
-                prev.filter(n => n.id !== notification.id)
-              )}
-              className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-start">
+              <div className="mr-3 mt-0.5">
+                {notification.type === "Critical" ? (
+                  <Siren className="w-6 h-6 text-red-100" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 text-yellow-100" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-lg text-white mb-1">
+                  {notification.type} ALERT!
+                </p>
+                <p className="text-sm text-white/90">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotifications(prev => 
+                  prev.filter(n => n.id !== notification.id)
+                )}
+                className="absolute top-3 right-3 p-1 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-white/80" />
+              </button>
+            </div>
+
+            {/* Progress bar */}
+            <motion.div
+              className="h-1 bg-white/30 absolute bottom-0 left-0 right-0 origin-left"
+              initial={{ scaleX: 1 }}
+              animate={{ scaleX: 0 }}
+              transition={{ duration: 10, ease: "linear" }}
+            />
           </motion.div>
         ))}
       </div>
