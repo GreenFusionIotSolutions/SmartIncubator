@@ -132,16 +132,18 @@ export const MonitoringDashboard = () => {
     lightIntensity: [],
   });
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
-  useEffect(() => {
-    const messaging = getMessaging();
-    const unsubscribe = onMessage(messaging, (payload) => {
-      new Notification(payload.notification?.title || "Alert", {
-        body: payload.notification?.body,
-        icon: "/logo192.png",
-      });
+  
+  // In your MonitoringDashboard component
+useEffect(() => {
+  const messaging = getMessaging();
+  const unsubscribe = onMessage(messaging, (payload) => {
+    new Notification(payload.notification?.title || "Alert", {
+      body: payload.notification?.body,
+      icon: "/logo192.png"
     });
-    return () => unsubscribe();
-  }, []);
+  });
+  return () => unsubscribe();
+}, []);
 
   const goBack = () => {
     window.history.back();

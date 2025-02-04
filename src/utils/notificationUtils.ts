@@ -1,51 +1,59 @@
+// src/utils/notificationUtils.ts
+import { Incubator } from "../components/MonitoringDashboard";
 import { db } from "../config/firebaseConfig";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 
-export const checkMetricThresholds = (incubator: any, userId: string) => {
+export const checkMetricThresholds = async (incubator: Incubator, userId: string) => {
+  const alerts = [];
+  
+  // Define thresholds
   const thresholds = {
-    temperature: { warn: 30, critical: 35 },
-    humidity: { warn: [40, 60], critical: [30, 70] },
-    airQualityIndex: { warn: 50, critical: 100 },
-    uvRadiation: { warn: 3, critical: 5 },
-    lightIntensity: { warn: 1000, critical: 2000 }
+    temperature: { max: 35, min: 20 },
+    humidity: { max: 70, min: 30 },
+    airQualityIndex: { max: 100 },
+    uvRadiation: { max: 5 },
+    lightIntensity: { max: 2000 },
   };
 
-  const alerts = [];
-
-  if (incubator.temperature >= thresholds.temperature.warn) {
-    alerts.push({
-      type: 'temperature',
-      value: incubator.temperature,
-      threshold: thresholds.temperature,
-      timestamp: new Date().toISOString()
-    });
+  // Check each metric
+  if (incubator.temperature > thresholds.temperature.max || incubator.temperature < thresholds.temperature.min) {
+    alerts.push(`Temperature critical (${incubator.temperature}°C)`);
+  }
+  
+  if (incubator.humidity > thresholds.humidity.max || incubator.humidity < thresholds.humidity.min) {
+    alerts.push(`Humidity critical (${incubator.humidity}%)`);
   }
 
-  if (incubator.humidity <= thresholds.humidity.critical[0] || 
-      incubator.humidity >= thresholds.humidity.critical[1]) {
-    alerts.push({
-      type: 'humidity',
-      value: incubator.humidity,
-      threshold: thresholds.humidity,
-      timestamp: new Date().toISOString()
-    });
+  if (incubator.airQualityIndex > thresholds.airQualityIndex.max) {
+    alerts.push(`Air quality critical (${incubator.airQualityIndex})`);
   }
 
-  if (incubator.airQualityIndex >= thresholds.airQualityIndex.warn) {
-    alerts.push({
-      type: 'airQuality',
-      value: incubator.airQualityIndex,
-      threshold: thresholds.airQualityIndex,
-      timestamp: new Date().toISOString()
-    });
+  if (incubator.uvRadiation > thresholds.uvRadiation.max) {
+    alerts.push(`UV radiation critical (${incubator.uvRadiation}mW/cm²)`);
   }
 
+  if (incubator.lightIntensity > thresholds.lightIntensity.max) {
+    alerts.push(`Light intensity critical (${incubator.lightIntensity}lux)`);
+  }
+
+  if (incubator.flameDetected) {
+    alerts.push("Flame detected!");
+  }
+
+  // Store alerts in Firestore and trigger notifications
   if (alerts.length > 0) {
-    // Write alerts to Firestore to trigger Cloud Function
-    const userRef = doc(db, "users", userId);
-    updateDoc(userRef, {
-      alerts: arrayUnion(...alerts),
-      fcmToken: localStorage.getItem('fcmToken') // Ensure token is stored
-    });
+    const notification = {
+      message: alerts.join(", "),
+      userId,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    try {
+      // Store notification in Firestore
+      await setDoc(doc(db, "notifications", `${userId}_${Date.now()}`), notification);
+    } catch (error) {
+      console.error("Error saving notification:", error);
+    }
   }
 };

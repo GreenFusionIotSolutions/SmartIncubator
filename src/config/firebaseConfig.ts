@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { getMessaging, getToken } from 'firebase/messaging';
 
 // Firebase Config for Project A
@@ -18,6 +18,15 @@ const app = initializeApp(firebaseConfig, 'app');
 // Initialize Firestore for both apps
 const db = getFirestore(app);
 const messaging = getMessaging(app);
+
+// src/config/firebaseConfig.js
+export const saveFCMToken = async (userId: string, token: any) => {
+  try {
+    await setDoc(doc(db, "users", userId), { fcmToken: token }, { merge: true });
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+  }
+};
 
 // Export Firestore and other functions for each app
 export { db, doc, getDoc, onSnapshot, messaging, getToken };
