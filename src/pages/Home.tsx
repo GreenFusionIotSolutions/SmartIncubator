@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Baby, UserCircle2, Lock } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { dbB } from '../config/firebaseConfig';
-import logo from '../pages/logo.png';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Baby, UserCircle2, Lock } from "lucide-react";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { dbB } from "../config/firebaseConfig";
+import logo from "../pages/logo.png";
 
 export function Home() {
   const navigate = useNavigate();
-  const [doctorCredentials, setDoctorCredentials] = useState({ username: '', password: '' });
-  const [parentCredentials, setParentCredentials] = useState({ username: '', password: '' });
+  const [doctorCredentials, setDoctorCredentials] = useState({ username: "", password: "" });
+  const [parentCredentials, setParentCredentials] = useState({ username: "", password: "" });
   const [adminBoxVisible, setAdminBoxVisible] = useState(false);
-  const [adminCredentials, setAdminCredentials] = useState({ username: '', password: '' });
+  const [adminCredentials, setAdminCredentials] = useState({ username: "", password: "" });
 
   const [doctorError, setDoctorError] = useState<string | null>(null);
   const [parentError, setParentError] = useState<string | null>(null);
@@ -20,70 +20,105 @@ export function Home() {
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [isParentLoading, setIsParentLoading] = useState(false);
 
+  // Doctor Login Function
   const handleDoctorLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsDoctorLoading(true);
     setDoctorError(null);
 
     try {
-      const doctorsRef = collection(dbB, 'doctors');
+      const doctorsRef = collection(dbB, "doctors");
       const q = query(
         doctorsRef,
-        where('doctorID', '==', doctorCredentials.username),
-        where('doctorPassword', '==', doctorCredentials.password)
+        where("doctorID", "==", doctorCredentials.username),
+        where("doctorPassword", "==", doctorCredentials.password)
       );
 
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        navigate('/doctor/dashboard');
+        navigate("/doctor/dashboard");
       } else {
-        setDoctorError('Invalid doctor credentials');
+        setDoctorError("Invalid doctor credentials");
       }
     } catch (error) {
-      console.error('Error during Doctor Login:', error);
-      setDoctorError('An error occurred. Please try again later.');
+      console.error("Error during Doctor Login:", error);
+      setDoctorError("An error occurred. Please try again later.");
     } finally {
       setIsDoctorLoading(false);
     }
   };
 
+  // Parent Login Function with Switch Check
   const handleParentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsParentLoading(true);
     setParentError(null);
 
     try {
-      const incubatorsRef = collection(dbB, 'incubators');
-      const q = query(
-        incubatorsRef,
-        where('parentID', '==', parentCredentials.username),
-        where('parentPassword', '==', parentCredentials.password)
-      );
+        // Fetch the latest switch document based on the lexicographical order of the document ID
+        const switchCollectionRef = collection(dbB, "switch");
+        const switchSnapshot = await getDocs(switchCollectionRef);
 
-      const querySnapshot = await getDocs(q);
+        console.log("Fetched switch snapshot:", switchSnapshot); // Log snapshot to see all documents
 
-      if (!querySnapshot.empty) {
-        navigate('/parent/monitor');
-      } else {
-        setParentError('Invalid parent credentials');
-      }
+        if (!switchSnapshot.empty) {
+            // Get the last document in the snapshot (most recent one based on document ID)
+            const latestSwitchDoc = switchSnapshot.docs[switchSnapshot.docs.length - 1].data();
+            const switchValue = latestSwitchDoc?.switch;
+
+            console.log("Fetched switch value:", switchValue); // Debug log for switch value
+
+            // Check if switch is set to 1, if so block login
+            if (switchValue === 1) {
+                console.log("Switch is set to 1, blocking login.");
+                setParentError("Can't login right now. Please try again later.");
+                setIsParentLoading(false);
+                return; // Prevent login if switch is 1
+            }
+        } else {
+            console.log("No switch document found or empty switch value.");
+            setParentError("Error: Unable to fetch switch value.");
+            setIsParentLoading(false);
+            return;
+        }
+
+        // Proceed with the login if switch == 0
+        const incubatorsRef = collection(dbB, "incubators");
+        const loginQuery = query(
+            incubatorsRef,
+            where("parentID", "==", parentCredentials.username),
+            where("parentPassword", "==", parentCredentials.password)
+        );
+
+        const loginSnapshot = await getDocs(loginQuery);
+
+        if (!loginSnapshot.empty) {
+            navigate("/parent/monitor");
+        } else {
+            setParentError("Invalid parent credentials");
+        }
     } catch (error) {
-      console.error('Error during Parent Login:', error);
-      setParentError('An error occurred. Please try again later.');
+        console.error("Error during Parent Login:", error);
+        setParentError("An error occurred. Please try again later.");
     } finally {
-      setIsParentLoading(false);
+        setIsParentLoading(false);
     }
-  };
+};
 
+
+
+
+
+  // Admin Login Function
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const { username, password } = adminCredentials;
 
-    if (username === 'aaa' && password === 'aaa') {
-      navigate('/admin');
+    if (username === "aaa" && password === "aaa") {
+      navigate("/admin");
     } else {
-      setAdminError('Invalid Admin Credentials!');
+      setAdminError("Invalid Admin Credentials!");
     }
   };
 
@@ -156,107 +191,106 @@ export function Home() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 max-w-4xl w-full mx-auto px-4">
-  {/* Doctor Login Card */}
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-gray-900 p-6 rounded-2xl shadow-lg"
-  >
-    <div className="flex items-center space-x-4 mb-4">
-      <UserCircle2 className="text-[#BB86FC]" size={32} />
-      <h2 className="text-2xl font-bold text-[#BB86FC]">Doctor Login</h2>
-    </div>
-    <form onSubmit={handleDoctorLogin} className="space-y-4">
-      <div className="relative">
-        <UserCircle2 className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
-        <input
-          type="text"
-          value={doctorCredentials.username}
-          onChange={(e) => setDoctorCredentials({ ...doctorCredentials, username: e.target.value })}
-          className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
-          placeholder="Doctor ID"
-          required
-        />
-      </div>
-      <div className="relative">
-        <Lock className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
-        <input
-          type="password"
-          value={doctorCredentials.password}
-          onChange={(e) => setDoctorCredentials({ ...doctorCredentials, password: e.target.value })}
-          className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
-          placeholder="Password"
-          required
-        />
-      </div>
-      {doctorError && (
-        <div className="text-red-400 text-sm bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
-          {doctorError}
-        </div>
-      )}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        type="submit"
-        disabled={isDoctorLoading}
-        className="w-full py-2 px-4 bg-[#a671ed] text-white rounded-lg hover:bg-[#BB86FC] transition-colors"
-      >
-        {isDoctorLoading ? 'Logging in...' : 'Login'}
-      </motion.button>
-    </form>
-  </motion.div>
+        {/* Doctor Login Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 p-6 rounded-2xl shadow-lg"
+        >
+          <div className="flex items-center space-x-4 mb-4">
+            <UserCircle2 className="text-[#BB86FC]" size={32} />
+            <h2 className="text-2xl font-bold text-[#BB86FC]">Doctor Login</h2>
+          </div>
+          <form onSubmit={handleDoctorLogin} className="space-y-4">
+            <div className="relative">
+              <UserCircle2 className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
+              <input
+                type="text"
+                value={doctorCredentials.username}
+                onChange={(e) => setDoctorCredentials({ ...doctorCredentials, username: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
+                placeholder="Doctor ID"
+                required
+              />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
+              <input
+                type="password"
+                value={doctorCredentials.password}
+                onChange={(e) => setDoctorCredentials({ ...doctorCredentials, password: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
+                placeholder="Password"
+                required
+              />
+            </div>
+            {doctorError && (
+              <div className="text-red-400 text-sm bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
+                {doctorError}
+              </div>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isDoctorLoading}
+              className="w-full py-2 px-4 bg-[#a671ed] text-white rounded-lg hover:bg-[#BB86FC] transition-colors"
+            >
+              {isDoctorLoading ? 'Logging in...' : 'Login'}
+            </motion.button>
+          </form>
+        </motion.div>
 
-  {/* Parent Login Card */}
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-gray-900 p-6 rounded-2xl shadow-lg"
-  >
-    <div className="flex items-center space-x-4 mb-4">
-      <Baby className="text-[#BB86FC]" size={32} />
-      <h2 className="text-2xl font-bold text-[#BB86FC]">Parent Login</h2>
-    </div>
-    <form onSubmit={handleParentLogin} className="space-y-4">
-      <div className="relative">
-        <Baby className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
-        <input
-          type="text"
-          value={parentCredentials.username}
-          onChange={(e) => setParentCredentials({ ...parentCredentials, username: e.target.value })}
-          className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
-          placeholder="Parent ID"
-          required
-        />
+        {/* Parent Login Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 p-6 rounded-2xl shadow-lg"
+        >
+          <div className="flex items-center space-x-4 mb-4">
+            <Baby className="text-[#BB86FC]" size={32} />
+            <h2 className="text-2xl font-bold text-[#BB86FC]">Parent Login</h2>
+          </div>
+          <form onSubmit={handleParentLogin} className="space-y-4">
+            <div className="relative">
+              <Baby className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
+              <input
+                type="text"
+                value={parentCredentials.username}
+                onChange={(e) => setParentCredentials({ ...parentCredentials, username: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
+                placeholder="Parent ID"
+                required
+              />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
+              <input
+                type="password"
+                value={parentCredentials.password}
+                onChange={(e) => setParentCredentials({ ...parentCredentials, password: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
+                placeholder="Password"
+                required
+              />
+            </div>
+            {parentError && (
+              <div className="text-red-400 text-sm bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
+                {parentError}
+              </div>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isParentLoading}
+              className="w-full py-2 px-4 bg-[#a671ed] text-white rounded-lg hover:bg-[#BB86FC] transition-colors"
+            >
+              {isParentLoading ? 'Logging in...' : 'Login'}
+            </motion.button>
+          </form>
+        </motion.div>
       </div>
-      <div className="relative">
-        <Lock className="absolute left-3 top-3 text-[#BB86FC]" size={20} />
-        <input
-          type="password"
-          value={parentCredentials.password}
-          onChange={(e) => setParentCredentials({ ...parentCredentials, password: e.target.value })}
-          className="w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-[#BB86FC] bg-gray-800 border-gray-700 text-white"
-          placeholder="Password"
-          required
-        />
-      </div>
-      {parentError && (
-        <div className="text-red-400 text-sm bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
-          {parentError}
-        </div>
-      )}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        type="submit"
-        disabled={isParentLoading}
-        className="w-full py-2 px-4 bg-[#a671ed] text-white rounded-lg hover:bg-[#BB86FC] transition-colors"
-      >
-        {isParentLoading ? 'Logging in...' : 'Login'}
-      </motion.button>
-    </form>
-  </motion.div>
-</div>
-
 
       <footer className="py-5 mt-auto text-gray-300">
         <div className="flex items-center justify-center space-y-4">
