@@ -324,7 +324,7 @@ export const MonitoringDashboard = () => {
           {/* Video Feed */}
           {selectedDateTime.toISOString().split("T")[0] === new Date().toISOString().split("T")[0] ? (
             <iframe
-              src={`http://192.168.13.246/`}
+              src={`http://192.168.84.246/`}
               width="100%"
               height="100%"
               className="rounded-xl border-2 border-gray-100"
